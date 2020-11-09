@@ -5,88 +5,82 @@ import (
 	"github.com/dawnkosmos/fastpine/exchange"
 )
 
-type HIGHEST struct {
+type highest struct {
 	src Series
 	len int
-	ug  *exchange.UpdateGroup
+
+	USR
 
 	data *cist.Cist
 	//TEMP VALUES
-	tempResult       float64
-	highPosition     int
-	pasthighPosition int
-	pastHigh         float64
+	tempResult float64
 }
 
-func Highest(src Series, l int) *HIGHEST {
-	var s HIGHEST
+//Highest is quivalent to highest(src, len)
+func Highest(src Series, l int) Series {
+	var s highest
 	s.len = l
 	s.src = src
-	f := src.Data()
-	l1 := len(*f)
+	s.resolution = src.Resolution()
+	s.starttime = src.Starttime() + int64(s.resolution*l)
+	if src.UpdateGroup() != nil {
+		s.ug = src.UpdateGroup()
+		(*s.ug).Add(&s)
+	}
 	s.data = cist.New()
-	var r []float64 = make([]float64, 0, l1)
-	var high float64 = (*f)[0]
-	var highPosition int = 0
-	r = append(r, high)
-	for i := 1; i < l; i++ {
-		if (*f)[i] >= high {
-			highPosition = i
-			high = (*f)[i]
+	f := src.Data()
+	var fOut []float64 = make([]float64, 0, len(f))
+	s.data.FillElements(f[:l])
+
+	hi := s.data.Highest(0)
+	high := hi.Get(0)
+
+	fOut = append(fOut, high)
+
+	var e *cist.Element
+	for _, v := range f[l:] {
+		e = s.data.NILO(v)
+
+		if v >= high {
+			high = v
+			hi = s.data.GetEle(0)
 		}
-		r = append(r, high)
+		if e == hi {
+			hi = s.data.Highest(0)
+			high = hi.Get(0)
+		}
+
+		fOut = append(fOut, high)
 	}
 
-	for i := l; i < l1; i++ {
-		if highPosition < i-l {
-			highPosition = getHighest((*f)[highPosition+1:i]) + highPosition
-			high = (*f)[highPosition]
-		}
-		if (*f)[i] >= high {
-			highPosition = i
-			high = (*f)[i]
-		}
-		r = append(r, high)
-	}
-
-	s.data.InitData(&r)
-	s.data.FillElements(l)
-
+	s.data.InitData(fOut)
 	return &s
 }
 
-func (s *HIGHEST) Update() {
-	v := s.src.Value(0)
-	if v == s.tempResult {
-		return
-	}
-	s.tempResult = v
-	if s.pastHigh < v {
-		s.data.Update(v)
-	}
-
+func (s *highest) Update() {
+	_ = "kek"
 }
 
-func getHighest(f []float64) int {
-	high := f[0]
-	highPosition := 0
-	for i := 1; i < len(f); i++ {
-		if f[i] >= high {
-			highPosition = i
-			high = f[i]
-		}
-	}
-	return highPosition
+func (s *highest) Add() {
+	_ = "kek"
 }
 
-func (s *HIGHEST) Resolution() int {
+func (s *highest) Resolution() int {
 	return s.src.Resolution()
 }
 
-func (s *HIGHEST) Starttime() int64 {
+func (s *highest) Starttime() int64 {
 	return s.src.Starttime()
 }
 
-func (s *HIGHEST) UpdateGroup() *exchange.UpdateGroup {
+func (s *highest) UpdateGroup() *exchange.UpdateGroup {
 	return s.ug
+}
+
+func (s *highest) Data() []float64 {
+	return s.data.GetData()
+}
+
+func (s *highest) Value(index int) float64 {
+	return s.data.Get(index)
 }

@@ -3,9 +3,10 @@ package series
 import (
 	"github.com/dawnkosmos/fastpine/cist"
 	"github.com/dawnkosmos/fastpine/exchange"
+	"github.com/dawnkosmos/fastpine/helper"
 )
 
-type VWMA struct {
+type vwma struct {
 	src        Series
 	vol        Series
 	len        int
@@ -13,13 +14,15 @@ type VWMA struct {
 	resolution int
 	ug         *exchange.UpdateGroup
 
+	USR
 	data               *cist.Cist
 	tempResult         float64
 	volSum, volXsrcSum float64
 }
 
-func Vwma(src Series, volume Series, l int) *VWMA {
-	var s VWMA
+//Vwma (src,volume,len) is equivalent to vwma(src,len)
+func Vwma(src Series, volume Series, l int) Series {
+	var s vwma
 	s.len = l
 	s.src = src
 	s.vol = volume
@@ -30,11 +33,11 @@ func Vwma(src Series, volume Series, l int) *VWMA {
 		(*s.ug).Add(&s)
 	}
 	s.data = cist.New()
-	f, vo := *src.Data(), *volume.Data()
+	f, vo := src.Data(), volume.Data()
 	fOut := make([]float64, 0, len(f))
 	vo = vo[len(vo)-len(f):]
-	volSum := Sum(vo[:l])
-	volXsrcSum := Sum(opExecute(mult, vo[:l], f[:l]))
+	volSum := helper.FloatSum(vo[:l])
+	volXsrcSum := helper.FloatSum(opExecute(mult, vo[:l], f[:l]))
 	avg := volXsrcSum / volSum
 	fOut = append(fOut, avg)
 
@@ -44,7 +47,7 @@ func Vwma(src Series, volume Series, l int) *VWMA {
 		fOut = append(fOut, volXsrcSum/volSum)
 	}
 
-	s.data.InitData(&fOut)
+	s.data.InitData(fOut)
 	calSrc := make([]float64, 0, l)
 	calVol := make([]float64, 0, l)
 
@@ -53,7 +56,7 @@ func Vwma(src Series, volume Series, l int) *VWMA {
 		calVol = append(calVol, f[i])
 	}
 
-	s.data.FillElements(l, calSrc, calVol)
+	s.data.FillElements(calSrc, calVol)
 
 	fuckS := s.data.Last()
 	s.volSum = volSum - fuckS[1]
@@ -62,31 +65,19 @@ func Vwma(src Series, volume Series, l int) *VWMA {
 	return &s
 }
 
-func (s *VWMA) Value(index int) float64 {
+func (s *vwma) Value(index int) float64 {
 	return (*s.data).Get(index)
 }
 
-func (s *VWMA) Resolution() int {
-	return s.resolution
-}
-
-func (s *VWMA) Starttime() int64 {
-	return s.starttime
-}
-
-func (s *VWMA) Data() *[]float64 {
+func (s *vwma) Data() []float64 {
 	return (*s.data).GetData()
 }
 
-func (s *VWMA) UpdateGroup() *exchange.UpdateGroup {
-	return s.ug
-}
-
-func (s *VWMA) Add() {
+func (s *vwma) Add() {
 	s.data.Add()
 }
 
-func (s *VWMA) Update() {
+func (s *vwma) Update() {
 	src := s.src.Value(0)
 	vol := s.vol.Value(0)
 	if src*vol == s.tempResult {

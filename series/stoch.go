@@ -3,26 +3,28 @@ package series
 import (
 	"github.com/dawnkosmos/fastpine/cist"
 	"github.com/dawnkosmos/fastpine/exchange"
+	"github.com/dawnkosmos/fastpine/helper"
 )
 
 /*Calculation
 100 * (Current Close - Lowest Low) / (Highest High - Lowest Low)
 */
-type STOCH struct {
+type stoch struct {
 	src  Series
 	high Series
 	low  Series
 	len  int
 
-	starttime  int64
-	resolution int
-
 	data *cist.Cist
 	ug   *exchange.UpdateGroup
+
+	USR
 }
 
-func Stoch(src Series, highS Series, lowS Series, le int) *STOCH {
-	var s STOCH
+//Stoch is the equivalent of stoch(src, high, low, len)
+//NOT FINISHED YET
+func Stoch(src Series, highS Series, lowS Series, le int) Series {
+	var s stoch
 	//Init
 	s.src, s.high, s.low, s.len = src, highS, lowS, le
 	s.resolution = src.Resolution()
@@ -33,9 +35,9 @@ func Stoch(src Series, highS Series, lowS Series, le int) *STOCH {
 		(*s.ug).Add(&s)
 	}
 	s.data = cist.New()
-	f := (*src.Data())[(src.Starttime()-s.starttime)/int64(s.resolution):]
-	h := (*highS.Data())[(highS.Starttime()-s.starttime)/int64(s.resolution):]
-	l := (*lowS.Data())[(lowS.Starttime()-s.starttime)/int64(s.resolution):]
+	f := (src.Data())[(src.Starttime()-s.starttime)/int64(s.resolution):]
+	h := (highS.Data())[(highS.Starttime()-s.starttime)/int64(s.resolution):]
+	l := (lowS.Data())[(lowS.Starttime()-s.starttime)/int64(s.resolution):]
 	var r []float64 = make([]float64, 0, len(f)+10)
 	var highPosition, lowPosition int = 0, 0
 	var high, low float64 = h[0], l[0]
@@ -54,7 +56,7 @@ func Stoch(src Series, highS Series, lowS Series, le int) *STOCH {
 	}
 	for i := le; i < len(f); i++ {
 		if lowPosition < i-le {
-			lowPosition = getLowest(l[lowPosition+1:i]) + lowPosition
+			lowPosition = helper.FloatPositionOfLowestValue(l[lowPosition+1:i]) + lowPosition
 			low = l[lowPosition]
 		}
 
@@ -64,7 +66,7 @@ func Stoch(src Series, highS Series, lowS Series, le int) *STOCH {
 		}
 
 		if highPosition < i-le {
-			highPosition = getHighest(h[highPosition+1:i]) + highPosition
+			highPosition = helper.FloatPositionOfHighestValue(h[highPosition+1:i]) + highPosition
 			high = h[highPosition]
 		}
 
@@ -76,38 +78,26 @@ func Stoch(src Series, highS Series, lowS Series, le int) *STOCH {
 		r = append(r, 100*(f[i]-low)/(high-low))
 	}
 	l1 := len(f)
-	s.data.InitData(&r)
-	s.data.FillElements(le, f[l1-le:], h[l1-le:], l[l1-le:])
+	s.data.InitData(r)
+	s.data.FillElements(f[l1-le:], h[l1-le:], l[l1-le:])
 	return &s
 
 }
 
 //100 * (Current Close - Lowest Low) / (Highest High - Lowest Low)
 
-func (s *STOCH) Update() {
+func (s *stoch) Update() {
 	_ = "kek"
 }
 
-func (s *STOCH) Add() {
+func (s *stoch) Add() {
 	s.data.Add()
 }
 
-func (s *STOCH) UpdateGroup() *exchange.UpdateGroup {
-	return s.ug
-}
-
-func (s *STOCH) Value(index int) float64 {
+func (s *stoch) Value(index int) float64 {
 	return (*s.data).Get(index)
 }
 
-func (s *STOCH) Resolution() int {
-	return s.resolution
-}
-
-func (s *STOCH) Starttime() int64 {
-	return s.starttime
-}
-
-func (s *STOCH) Data() *[]float64 {
+func (s *stoch) Data() []float64 {
 	return (*s.data).GetData()
 }

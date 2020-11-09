@@ -12,8 +12,8 @@ type Cist struct {
 	When a candle closes, these Element gets pushed to the front
 	while the Back element(which isnt needed anymore) get deleted
 	*/
-	root Element
-	data *[]float64
+	root *Element
+	data []float64
 	len  int
 }
 
@@ -27,8 +27,9 @@ if you want to create own indicators, check the RSI creation as an example
 */
 
 func (l *Cist) init() *Cist {
-	l.root.next = &l.root
-	l.root.prev = &l.root
+	l.root = &Element{}
+	l.root.next = l.root
+	l.root.prev = l.root
 	l.len = 0
 	return l
 }
@@ -51,50 +52,42 @@ Also we get our data in inverse way than it is saved
 So Get(0) returns the top or actual value
 */
 func (l *Cist) Get(index int) float64 {
-	return (*l.data)[l.len-index-1]
+	return l.data[l.len-index-1]
 }
 
 //GetData return the whole list data
-func (l *Cist) GetData() *[]float64 {
+func (l *Cist) GetData() []float64 {
 	return l.data
 }
 
 //AddToData float values to the array
-func (l *Cist) AddToData(f ...float64) {
-	*l.data = append((*l.data), f...)
-	l.len = l.len + len(f)
+func (l *Cist) AddToData(f float64) {
+	l.data = append((l.data), f)
+	l.len = l.len + 1
 }
 
 //InitData fills the Data array
-func (l *Cist) InitData(f *[]float64) {
+func (l *Cist) InitData(f []float64) {
 	l.data = f
-	l.len = len(*f)
+	l.len = len(f)
 }
 
 //Push adds a new element in the front of the list
 func (l *Cist) Push(v ...float64) {
 	o := l.root.next
-	e := Element{value: v, prev: &l.root, next: o}
+	e := Element{value: v, prev: l.root, next: o}
 	o.prev = &e
 	l.root.next = &e
 }
 
-//NILO New In Last Out. Pushes the root and deletes the back
-func (l *Cist) NILO() []float64 {
-	l.Push(l.Root()...)
-	return l.PopLast()
-}
-
 //Deletes last list element
-func (l *Cist) PopLast() (v []float64) {
+func (l *Cist) PopLast() *Element {
 	e := l.root.prev
-	v = e.value
 	l.root.prev = e.prev
 	e.prev.next = e.next
 	e.next = nil
 	e.prev = nil
-	e.value = []float64{}
-	return
+	return e
 }
 
 //GetEle gets you an Element
@@ -117,25 +110,72 @@ func (e *Element) Next() *Element {
 }
 
 //Init the Elements with the data needed for a fast calculation
-func (l *Cist) FillElements(len int, f ...[]float64) {
-	len = len - 1
-	for i := 0; i < len; i++ {
+func (l *Cist) FillElements(f ...[]float64) {
+	le := len(f[0])
+	for i := 0; i < le; i++ {
 		var temp []float64
-		for _, l := range f {
-			temp = append(temp, l[i])
+		for _, v := range f {
+			temp = append(temp, v[i])
 		}
 		l.Push(temp...)
 	}
 }
 
+//NILO New In Last Out. Pushes the root if no input
+func (l *Cist) NILO(f ...float64) *Element {
+	if len(f) == 0 {
+		l.Push(l.Root()...)
+	} else {
+		l.Push(f...)
+	}
+	return l.PopLast()
+}
+
 //Updates the Root Element and data
 func (l *Cist) Update(indicator float64, element ...float64) {
-	(*l.data)[l.len-1] = indicator
+	l.data[l.len-1] = indicator
 	l.root.value = element
 }
 
 //Add pushes the
 func (l *Cist) Add() {
 	l.NILO()
-	l.AddToData((*l.data)[l.len-1])
+	l.AddToData(l.data[l.len-1])
+}
+
+func (l *Cist) Lowest(pos int) *Element {
+	lowest := l.root.next.Get(pos)
+	lowElement := l.root.next
+	i := lowElement.next
+	for i != l.root {
+		if i.Get(pos) < lowest {
+			lowElement = i
+			lowest = i.Get(pos)
+		}
+		i = i.next
+	}
+	return lowElement
+}
+
+func (l *Cist) Highest(pos int) *Element {
+	highest := l.root.next.Get(pos)
+	highElement := l.root.next
+	i := highElement.next
+
+	for i != l.root {
+		if i.Get(pos) > highest {
+			highElement = i
+			highest = i.Get(pos)
+		}
+		i = i.next
+	}
+	return highElement
+}
+
+func (e *Element) Get(pos int) float64 {
+	return e.value[pos]
+}
+
+func (e *Element) Value() []float64 {
+	return e.value
 }

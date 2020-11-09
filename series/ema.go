@@ -2,15 +2,14 @@ package series
 
 import (
 	"github.com/dawnkosmos/fastpine/cist"
-	"github.com/dawnkosmos/fastpine/exchange"
+	"github.com/dawnkosmos/fastpine/helper"
 )
 
-type EMA struct {
-	src        Series
-	len        int
-	starttime  int64
-	resolution int
-	ug         *exchange.UpdateGroup
+type ema struct {
+	src Series
+	len int
+
+	USR
 
 	/*Cist Element saves:
 	Just last value
@@ -20,21 +19,22 @@ type EMA struct {
 	tempResult float64
 }
 
-/* EMA Calculation
+/* ema Calculation
 1. Calculate the SMA
 
 (Period Values / Number of Periods)
 2. Calculate the Multiplier
 
 (2 / (Number of Periods + 1) therefore (2 / (5+1) = 33.333%
-3. Calculate the EMA
-For the first EMA, we use the SMA(previous day) instead of EMA(previous day).
+3. Calculate the ema
+For the first ema, we use the SMA(previous day) instead of ema(previous day).
 
-EMA = {Close - EMA(previous day)} x multiplier + EMA(previous day)
+ema = {Close - ema(previous day)} x multiplier + ema(previous day)
 */
 
-func Ema(src Series, l int) *EMA {
-	var s EMA
+//Ema is äquivalent to ema(src,len)
+func Ema(src Series, l int) Series {
+	var s ema
 	s.len = l
 	s.src = src
 	s.resolution = src.Resolution()
@@ -46,20 +46,28 @@ func Ema(src Series, l int) *EMA {
 	s.alpha = 2.0 / float64(l+1)
 	s.data = cist.New()
 	f := src.Data()
-	l1 := len(*f)
+	l1 := len(f)
 	r := make([]float64, 0, l1)
-	avg := Average((*f)[:l])
+	avg := helper.FloatAverage(f[:l])
 	r = append(r, avg)
 	for i := l; i < l1; i++ {
-		avg = ((*f)[i]-avg)*s.alpha + avg
+		avg = (f[i]-avg)*s.alpha + avg
 		r = append(r, avg)
 	}
-	s.data.InitData(&r)
+	s.data.InitData(r)
 	return &s
 
 }
 
-func (s *EMA) Update() {
+func (s *ema) Value(index int) float64 {
+	return (*s.data).Get(index)
+}
+
+func (s *ema) Data() []float64 {
+	return (*s.data).GetData()
+}
+
+func (s *ema) Update() {
 	v := s.src.Value(0)
 	if v == s.tempResult {
 		return
@@ -69,26 +77,6 @@ func (s *EMA) Update() {
 	s.data.Update(r)
 }
 
-func (s *EMA) UpdateGroup() *exchange.UpdateGroup {
-	return s.ug
-}
-
-func (s *EMA) Value(index int) float64 {
-	return (*s.data).Get(index)
-}
-
-func (s *EMA) Data() *[]float64 {
-	return (*s.data).GetData()
-}
-
-func (s *EMA) Add() {
+func (s *ema) Add() {
 	s.data.Add()
-}
-
-func (s *EMA) Starttime() int64 {
-	return s.starttime
-}
-
-func (s *EMA) Resolution() int {
-	return s.resolution
 }

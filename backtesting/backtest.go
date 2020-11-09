@@ -1,82 +1,80 @@
 package backtesting
 
-import "sort"
+import (
+	"errors"
+
+	"github.com/dawnkosmos/fastpine/series"
+)
 
 type Backtest struct {
-	Exchage string
-	Ticker  string
-	Trades  []Trade
-	R       Result
+	o      []*series.OHCLV
+	env    []EnviromentFunc
+	trades []AlgoFunc
+
+	R Result
 }
 
-type Result struct {
-	Amount      int
-	Winrate     float64
-	AvgWin      float64
-	Median      float64
-	MaxDrawdown float64
+/*
+func strategyTradeToTrade(ch Chart, trades []strategy.Trade) []Trade {
+	cd := ch.ch
+	var tr []Trade = make([]Trade, 0, len(trades))
+
+	st := ch.Starttime - ch.Resolution
+	var t Trade
+	for _, v := range trades {
+		t.EntryTime = int(v.EntryTime.Unix())
+		t.ExitTime = int(v.ExitTime.Unix())
+		t.EntryPrice = v.EntryPrice
+		t.ExitPrice = v.ExitPrice
+		t.Side = bool(v.Side)
+		if t.EntryTime < cd[0].Timestamp {
+			continue
+		}
+		t.EntryCondition = cd[(t.EntryTime-st)/ch.Resolution]
+		t.ExitCondition = cd[(t.ExitTime-st)/ch.Resolution]
+		tr = append(tr, t)
+	}
+
+	return tr
+}*/
+
+type Algo struct {
+	description string
+	longs       []Trade
+	shorts      []Trade
 }
 
-func New(exchange string, ticker string, trades *[]Trade) *Backtest {
+type AlgoFunc func(o *series.OHCLV) (des string, longs []series.Trade, shorts []series.Trade)
+type EnviromentFunc func(o *series.OHCLV) (des string, evn series.Condition)
+
+func New(o *series.OHCLV, trades []strategy.Trade, IndicatorLayout []string, indicators ...series.Series) *Backtest {
 	var b Backtest
-	b.Exchage, b.Ticker = exchange, ticker
-	b.Trades = *trades
-	b.R = getResult(b.Trades)
-	return &b
-}
-
-func getResult(t []Trade) Result {
-	var r Result
-	var gains []float64 = make([]float64, 0, len(t))
-	for _, v := range t {
-		gains = append(gains, v.GetGains())
-	}
-	r.AvgWin, r.Winrate = avgWinWinrate(gains)
-	r.MaxDrawdown = maxDrawDown(gains)
-	r.Median = median(gains)
-
-	return r
+	b.e = o.E
 
 }
 
-func avgWinWinrate(f []float64) (float64, float64) {
-	var gains float64
-	var count int = 0
-	for _, a := range f {
-		gains += a
-		if a > 0 {
-			count++
-		}
-	}
-	return gains / float64(len(f)), float64(count) / float64(len(f)) * 100
+func (b *Backtest) Candlestickdata(o ...*series.OHCLV) error {
+	_ = o
+	return errors.New("kek")
 }
 
-func maxDrawDown(f []float64) float64 {
-	var maxDD float64 = 1.0
-	var actualDD float64 = 1.0
-	var maxGains float64 = 1.0
-	for _, v := range f {
-		if v < 0 {
-			actualDD = actualDD * (1 + v)
-			if actualDD < maxDD {
-				maxDD = actualDD
-			}
-		} else {
-			actualDD = 1
-		}
-		maxGains *= (1 + v)
-	}
-	return maxGains
+func (b *Backtest) Trades(a ...AlgoFunc) error {
+	_ = t
+	return errors.New("kek")
 }
 
-func median(f []float64) (m float64) {
-	l := len(f)
-	sort.Sort(sort.Float64Slice(f))
-	k := l / 2
-	if l%2 == 0 {
-		m = (f[k-1] + f[k]) / 2
-	} else {
-		m = f[k]
-	}
-	return
+func (b *Backtest) Indicators(IndicatorLayout []string, s ...series.Series) {
+	_ = "kek"
+}
+
+/*
+token := {"Compare","ID", "ID | Number"} | {"Value", "ID", "Int"},
+Expression := token | {token, "or | and", token}}
+*/
+func (b *Backtest) Condition(con [][]string) {
+
+}
+
+func (b *Backtest) Enviroment(env EnviromentFunc) {
+
 }

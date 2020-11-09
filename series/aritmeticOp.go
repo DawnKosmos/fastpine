@@ -6,12 +6,12 @@ import (
 	"github.com/dawnkosmos/fastpine/exchange"
 )
 
-/*All Aritmetic Operations are from the type of the ARIT struct
+/*All Aritmetic Operations are from the type of the arit struct
 This class gets feeded with a function which gets 2 float64 values and returns one
 I implemented a tone but it easily can be extended by crazier kind of stuff
 */
 
-type ARIT struct {
+type arit struct {
 	src        Series
 	src2       Series
 	op         func(v1 float64, v2 float64) float64
@@ -22,8 +22,19 @@ type ARIT struct {
 	ug *exchange.UpdateGroup
 }
 
-func Arit(operator func(float64, float64) float64, src Series, v Value) *ARIT {
-	var s ARIT
+/*Arit lets you create your own Arithmetic operations. Here an example:
+
+@parameter v Value accepts types of series, integer or float64
+
+func Add(src Series, v Value) Series {
+	o := func(v1 float64, v2 float64) float64 {
+		return v1 + v2
+	}
+	return Arit(o, src, v)
+}
+*/
+func Arit(operator func(float64, float64) float64, src Series, v Value) Series {
+	var s arit
 	s.src = src
 	s.op = operator
 	s.ug = src.UpdateGroup()
@@ -45,15 +56,15 @@ func Arit(operator func(float64, float64) float64, src Series, v Value) *ARIT {
 	return &s
 }
 
-func (s *ARIT) Starttime() int64 {
+func (s *arit) Starttime() int64 {
 	return s.starttime
 }
 
-func (s *ARIT) Resolution() int {
+func (s *arit) Resolution() int {
 	return s.src.Resolution()
 }
 
-func (s *ARIT) Value(index int) float64 {
+func (s *arit) Value(index int) float64 {
 	if s.isConstant {
 		return s.op(s.src.Value(index), s.c)
 	} else {
@@ -61,21 +72,21 @@ func (s *ARIT) Value(index int) float64 {
 	}
 }
 
-func (s *ARIT) UpdateGroup() *exchange.UpdateGroup {
+func (s *arit) UpdateGroup() *exchange.UpdateGroup {
 	return s.ug
 }
 
-func (s *ARIT) Data() *[]float64 {
+func (s *arit) Data() []float64 {
 	if s.isConstant {
 		f := s.src.Data()
-		fOut := make([]float64, 0, len(*f))
-		for _, v := range *f {
+		fOut := make([]float64, 0, len(f))
+		for _, v := range f {
 			fOut = append(fOut, s.op(v, s.c))
 		}
-		return &fOut
+		return fOut
 	} else {
-		f1 := *s.src.Data()
-		f2 := *s.src2.Data()
+		f1 := s.src.Data()
+		f2 := s.src2.Data()
 		l1, l2 := len(f1), len(f2)
 		if l1 >= l2 {
 			fOut := make([]float64, l2, l2)
@@ -83,42 +94,83 @@ func (s *ARIT) Data() *[]float64 {
 			for i, v := range f2 {
 				fOut[i] = s.op(f1[i], v)
 			}
-			return &fOut
+			return fOut
 		} else {
 			fOut := make([]float64, l1, l1)
 			f2 = f2[l2-l1:]
 			for i, v := range f1 {
 				fOut[i] = s.op(v, f2[i])
 			}
-			return &fOut
+			return fOut
 		}
 	}
 }
 
 //OPERATIONS
 
-func Add(src Series, v Value) *ARIT {
+func Abs(src Series) Series {
+	o := func(v1 float64, _ float64) float64 {
+		return math.Abs(v1)
+	}
+	return Arit(o, src, 0)
+}
+
+//Add (a,b) => a + b
+func Add(src Series, v Value) Series {
 	o := func(v1 float64, v2 float64) float64 {
 		return v1 + v2
 	}
 	return Arit(o, src, v)
 }
 
-func Mult(src Series, v Value) *ARIT {
+//Mult (a,b) => a*b
+func Mult(src Series, v Value) Series {
 	o := func(v1 float64, v2 float64) float64 {
 		return v1 * v2
 	}
 	return Arit(o, src, v)
 }
 
-func Sub(src Series, v Value) *ARIT {
-	o := func(v1 float64, v2 float64) float64 {
-		return v1 - v2
+//Sub (src,v) => src - v
+func Sub(src Value, v Value) Series {
+	s, ok := src.(Series)
+
+	if ok {
+		o := func(v1 float64, v2 float64) float64 {
+			return v1 - v2
+		}
+		return Arit(o, s, v)
 	}
-	return Arit(o, src, v)
+
+	f, ok := src.(float64)
+
+	if ok {
+		v, ok := src.(Series)
+		if ok {
+			o := func(v1 float64, v2 float64) float64 {
+				return v2 - v1
+			}
+			return Arit(o, v, f)
+		}
+	}
+
+	kek, ok := src.(int)
+	if ok {
+		v, ok := src.(Series)
+		if ok {
+			o := func(v1 float64, v2 float64) float64 {
+				return v2 - v1
+			}
+			return Arit(o, v, kek)
+		}
+	}
+
+	return nil
+
 }
 
-func Div(src Series, v Value) *ARIT {
+//Div (src,v) => src/v
+func Div(src Series, v Value) Series {
 	o := func(v1 float64, v2 float64) float64 {
 		if v2 == 0 {
 			v1 = 0
@@ -129,99 +181,127 @@ func Div(src Series, v Value) *ARIT {
 	return Arit(o, src, v)
 }
 
-func Mod(src Series, v Value) *ARIT {
+//Mod (src,v) => src%v
+func Mod(src Series, v Value) Series {
 	o := math.Mod
 	return Arit(o, src, v)
 }
 
-func Pow(src Series, v Value) *ARIT {
+//Pow (src,v) => src^v
+func Pow(src Series, v Value) Series {
 	o := math.Pow
 	return Arit(o, src, v)
 }
 
-func Round(src Series) *ARIT {
+//Round (src) => round(src)
+func Round(src Series) Series {
 	o := func(v1 float64, _ float64) float64 {
 		return math.Round(v1)
 	}
 	return Arit(o, src, 0.0)
 }
 
-func Min(src Series, v Value) *ARIT {
+//Min (src,v) => min(src,v)
+func Min(src Series, v Value) Series {
 	o := math.Min /*func(v1 float64, v2 float64) float64 {
 		return math.Min(v1, v2)
 	}*/
 	return Arit(o, src, v)
 }
 
-func Max(src Series, v Value) *ARIT {
+//Max (src,v) => max(src,v)
+func Max(src Series, v Value) Series {
 	o := math.Max
 	return Arit(o, src, v)
 }
 
-func Remainder(src Series, v Value) *ARIT {
+//Remainder (src,v) => return remainder of src/v
+func Remainder(src Series, v Value) Series {
 	o := math.Remainder
 	return Arit(o, src, v)
 }
 
-func Hypot(src Series, v Value) *ARIT {
+//Hypot (src, v) => sqrt(src²+v²)
+func Hypot(src Series, v Value) Series {
 	o := math.Hypot
 	return Arit(o, src, v)
 }
 
-//F functions but an extra factor to multiply the first Value
-func AddF(src Series, v Value, factor float64) *ARIT {
+//AddF (src, v, factor) => src*factor + v
+func AddF(src Series, v Value, factor float64) Series {
 	o := func(v1 float64, v2 float64) float64 {
 		return v1*factor + v2
 	}
 	return Arit(o, src, v)
 }
 
-func SubF(src Series, v Value, factor float64) *ARIT {
+//SubF (src,v,factor) => src*factor - v
+func SubF(src Series, v Value, factor float64) Series {
 	o := func(v1 float64, v2 float64) float64 {
 		return v1*factor - v2
 	}
 	return Arit(o, src, v)
 }
 
-func MultF(src Series, v Value, factor float64) *ARIT {
+//MultF (src,v,factor) => src*factor * v
+func MultF(src Series, v Value, factor float64) Series {
 	o := func(v1 float64, v2 float64) float64 {
 		return v1 * factor * v2
 	}
 	return Arit(o, src, v)
 }
 
-func DivF(src Series, v Value, factor float64) *ARIT {
+//DivF (src,v,factor) => src*factor/v
+func DivF(src Series, v Value, factor float64) Series {
 	o := func(v1 float64, v2 float64) float64 {
 		return v1 * factor / v2
 	}
 	return Arit(o, src, v)
 }
 
-//C functions but an extra constant gets added to the solution
-func AddC(src Series, v Value, constant float64) *ARIT {
+//AddC (src,v,constant) => src+v+constant
+func AddC(src Series, v Value, constant float64) Series {
 	o := func(v1 float64, v2 float64) float64 {
 		return v1 + v2 + constant
 	}
 	return Arit(o, src, v)
 }
 
-func SubC(src Series, v Value, constant float64) *ARIT {
+//SubC (src,v,constant) => src-v+constant
+func SubC(src Series, v Value, constant float64) Series {
 	o := func(v1 float64, v2 float64) float64 {
-		return v1 + v2 + constant
+		return v1 - v2 + constant
 	}
 	return Arit(o, src, v)
 }
 
-func DivC(src Series, v Value, constant float64) *ARIT {
+//DivC (src,v,constant) => src/v+constant
+func DivC(src Series, v Value, constant float64) Series {
 	o := func(v1 float64, v2 float64) float64 {
-		return v1 + v2 + constant
+		return v1/v2 + constant
 	}
 	return Arit(o, src, v)
 }
 
-func MultC(src Series, v Value, constant float64) *ARIT {
+//MultC (src,v,constant) => src*v+constant
+func MultC(src Series, v Value, constant float64) Series {
 	o := func(v1 float64, v2 float64) float64 {
-		return v1 + v2 + constant
+		return v1*v2 + constant
 	}
 	return Arit(o, src, v)
+}
+
+//Sqrt (src) => sqrt(src)
+func Sqrt(src Series) Series {
+	o := func(v1, v2 float64) float64 {
+		return math.Sqrt(v1)
+	}
+	return Arit(o, src, 0)
+}
+
+func Neg(src Series) Series {
+	o := func(v1, v2 float64) float64 {
+		return -v1
+	}
+	return Arit(o, src, 0)
 }

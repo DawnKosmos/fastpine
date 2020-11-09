@@ -35,6 +35,7 @@ func (client *FTX) OHCLV(ticker string, res int, startTime int64, endTime int64)
 	var historicalPrices []exchange.Candle
 	var end int64 = 0
 	newRes := checkResolution(res)
+
 	for startTime < endTime {
 		end = startTime + int64(newRes*1500)
 		if end >= endTime {
@@ -56,7 +57,8 @@ func (client *FTX) OHCLV(ticker string, res int, startTime int64, endTime int64)
 		startTime = startTime + int64(newRes*1501)
 	}
 
-	return exchange.ConvertChartResolution(int64(res), int64(newRes), historicalPrices)
+	kek, err := exchange.ConvertChartResolution(int64(newRes), int64(res), historicalPrices)
+	return kek, err
 }
 
 func (client *FTX) getHistoricalPrices(ticker string, res int64, startTime int64, endTime int64) ([]exchange.Candle, error) {
@@ -74,7 +76,6 @@ func (client *FTX) getHistoricalPrices(ticker string, res int64, startTime int64
 	err = _processResponse(resp, &historicalPrices)
 	return historicalPrices.Result, nil
 }
-
 
 //checkResolution looking if the asked resolution is a valid one
 func checkResolution(res int) int {

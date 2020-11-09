@@ -2,10 +2,10 @@ package series
 
 import (
 	"github.com/dawnkosmos/fastpine/cist"
-	"github.com/dawnkosmos/fastpine/exchange"
+	"github.com/dawnkosmos/fastpine/helper"
 )
 
-/* RSI CALC
+/* rsi CALC
 change = change(close)
 gain = change >= 0 ? change : 0.0
 loss = change < 0 ? (-1) * change : 0.0
@@ -22,26 +22,27 @@ pine_rma(x, y) =>
 	sum := alpha * x + (1 - alpha) * nz(sum[1])
 */
 
-type RSI struct {
-	src        Series
-	len        int
-	starttime  int64
-	resolution int
-
+type rsi struct {
+	src Series
+	len int
+	USR
+	//starttime  int64
+	//resolution int
 	/*An Cist element will save following
-	  source
-	  avgGain
-	  avgLose
+	source
+	avgGain
+	avgLose
 	*/
-	data       *cist.Cist
-	ug         *exchange.UpdateGroup
-	tempResult float64
-	//RMA
+	data *cist.Cist
+	//ug         *exchange.UpdateGroup
 	alpha float64
+
+	tempResult float64
 }
 
-func Rsi(src Series, l int) *RSI {
-	var r RSI
+//Rsi is equivalent to rsi(src, len) in pinescript
+func Rsi(src Series, l int) Series {
+	var r rsi
 	//INIT
 	r.len = l
 	r.src = src
@@ -53,27 +54,27 @@ func Rsi(src Series, l int) *RSI {
 	}
 	r.data = cist.New()
 	f := src.Data()
-	gain, loss := initGainLoss((*f))
+	gain, loss := initGainLoss(f)
 	r.alpha = 1 / float64(l)
-	avgGain, avgLoss := Average(gain[:l]), Average(loss[:l])
+	avgGain, avgLoss := helper.FloatAverage(gain[:l]), helper.FloatAverage(loss[:l])
 	rs := avgGain / avgLoss
-	rsi := make([]float64, 0, len(*f))
-	//First RSI Value
+	rsi := make([]float64, 0, len(f))
+	//First rsi Value
 	rsi = append(rsi, 100-(100/(1+rs)))
-	//Iterating and dynamically calculating the RSI
+	//Iterating and dynamically calculating the rsi
 	for i := l; i < len(gain); i++ {
 		avgGain = r.alpha*gain[i] + (1-r.alpha)*avgGain
 		avgLoss = r.alpha*loss[i] + (1-r.alpha)*avgLoss
 		rsi = append(rsi, (100 - (100 / (1 + avgGain/avgLoss))))
 	}
 
-	l1, l2 := len(*f), len(gain)
-	r.data.FillElements(l, (*f)[l1-l:], gain[l2-l:])
-	r.data.InitData(&rsi)
+	l1, l2 := len(f), len(gain)
+	r.data.FillElements(f[l1-l:], gain[l2-l:])
+	r.data.InitData(rsi)
 	return &r
 }
 
-func (r *RSI) Update() {
+func (r *rsi) Update() {
 	v := r.src.Value(0)
 	if v == r.tempResult {
 		return
@@ -87,27 +88,15 @@ func (r *RSI) Update() {
 	r.data.Update(rsi, avgGain, avgLoss)
 }
 
-func (r *RSI) Add() {
+func (r *rsi) Add() {
 	r.data.Add()
 }
 
-func (r *RSI) Value(index int) float64 {
+func (r *rsi) Value(index int) float64 {
 	return (*r.data).Get(index)
 }
 
-func (r *RSI) Resolution() int {
-	return r.resolution
-}
-
-func (r *RSI) Starttime() int64 {
-	return r.starttime
-}
-
-func (r *RSI) UpdateGroup() *exchange.UpdateGroup {
-	return r.ug
-}
-
-func (r *RSI) Data() *[]float64 {
+func (r *rsi) Data() []float64 {
 	return (*r.data).GetData()
 }
 

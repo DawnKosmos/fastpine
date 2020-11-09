@@ -16,9 +16,11 @@ type Instance struct {
 const HOUR int = 3600
 
 type Exchange interface {
-	//SubscribeTicker([]string, chan Ticker)
-	OHCLV(ticker string, resolution int, start int64, end int64) ([]Candle, error)
 	Name() string
+	//SubscribeTicker([]string, chan Ticker)
+
+	//OHCLV kriegt noch ein Bool für LiveData
+	OHCLV(ticker string, resolution int, start int64, end int64) ([]Candle, error)
 	Actual(Ticker string, resolution int64) (Candle, error)
 	//SubscribeFills([]string, chan Fill)
 }
@@ -49,6 +51,10 @@ type Candle struct {
 	StartTime time.Time `json:"startTime"`
 }
 
+func (c Candle) OHCL4() float64 {
+	return (c.Open + c.Close + c.High + c.Low) / 4
+}
+
 //HELP FUNCTIONS
 //Getting starting timestamps
 func DateToTime(day, month, year string) int64 {
@@ -62,9 +68,9 @@ func DateToTimeHourly(day, month, year, hour string) int64 {
 }
 
 //ConvertResolution converts the a lower resolution into a higher resolution
-func ConvertCandleResolution(c ...Candle) Candle {
-	var out Candle = Candle{0, 0, c[0].Low, c[0].Open, 0, c[0].StartTime}
-	for _, i := range c {
+func ConvertCandleResolution(c []Candle) Candle {
+	var out Candle = Candle{c[0].Close, c[0].High, c[0].Low, c[0].Open, c[0].Volume, c[0].StartTime}
+	for _, i := range c[1:] {
 		out.Close = i.Close
 		out.Volume += i.Volume
 		if i.High > out.High {
@@ -77,37 +83,42 @@ func ConvertCandleResolution(c ...Candle) Candle {
 	return out
 }
 
-func ConvertChartResolution(new, old int64, ch []Candle) ([]Candle, error) {
-	if new == old {
-		return ch, nil
+//New res must me greater than old
+func ConvertChartResolution(oldResolution, newResolution int64, ch []Candle) ([]Candle, error) {
+	if newResolution == oldResolution {
+		return ch, fmt.Errorf("nigger")
 	}
-	var startingPoint, endPoint int
-	if old > new || new%old != 0 {
-		return ch, fmt.Errorf("New Res %v and old %v do not fit", new, old)
+
+	if oldResolution > newResolution || newResolution%oldResolution != 0 {
+		return ch, fmt.Errorf("New Res %v and old %v do not fit", newResolution, oldResolution)
 	}
-	for i, c := range ch {
-		if c.StartTime.Unix()%new == 0 {
-			startingPoint = i
+
+	quotient := int(newResolution / oldResolution)
+
+	fmt.Println(quotient, newResolution, oldResolution)
+
+	var newChart []Candle = make([]Candle, 0, len(ch)/quotient)
+
+	for _, c := range ch {
+		if c.StartTime.Unix()%newResolution != 0 {
+			ch = ch[1:]
+		} else {
 			break
 		}
 	}
-	for i := len(ch) - 1; i != 1; i-- {
-		if ch[i].StartTime.Unix()%new == 0 {
-			endPoint = i
+
+	for {
+		if len(ch) < quotient {
 			break
 		}
+		newChart = append(newChart, ConvertCandleResolution(ch[:quotient]))
+		ch = ch[quotient:]
 	}
-	multiplicator := int(new / old)
-
-	var out []Candle
-
-	for i := startingPoint; i < endPoint; {
-		out = append(out, ConvertCandleResolution(ch[i:i+multiplicator]...))
-		i = i + multiplicator
+	if len(ch) != 0 {
+		newChart = append(newChart, ConvertCandleResolution(ch))
 	}
-	out = append(out, ConvertCandleResolution(ch[endPoint:len(ch)]...))
 
-	return out, nil
+	return newChart, nil
 }
 
 func median(a, b, c float64) float64 {

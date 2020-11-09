@@ -4,38 +4,50 @@ import (
 	"github.com/dawnkosmos/fastpine/exchange"
 )
 
-type FUNCTION struct {
+type function struct {
 	src       []Series
 	op        func(index int, v ...Series) float64
 	starttime int64
 	ug        *exchange.UpdateGroup
-	fOut      *[]float64
+	fOut      []float64
 	delay     int
 	len       int
-	fBool     *[]bool
+	fBool     []bool
 }
 
-func Function(operator func(i int, v ...Series) float64, delay int, src ...Series) *FUNCTION {
-	var s FUNCTION
+/*Function allows you to implement complicated indicators
+Sadly its really complicated and slow, Should be used really carefully
+Usually you should be able to implement everything with the other given indicators,
+You also can write me and I will add your specific indicator.
+
+Function implements the Series and Condition Interface
+
+Look at the end of  this this file to see some example implementation
+*/
+func Function(operator func(index int, v ...Series) float64, delay int, src ...Series) *function {
+	var s function
+	//Init
 	s.src = src
 	s.op = operator
 	s.ug = src[0].UpdateGroup()
 	s.starttime, s.len = getStarttime(src...)
 	s.starttime = int64(delay*s.src[0].Resolution()) + s.starttime
 	s.delay = delay
+	//Creating a Series Slice later filled with fSeries
 	var f []Series = make([]Series, 0, len(s.src))
 	var iterLen int = s.len - s.delay
 	for _, v := range s.src {
 		f = append(f, fakeSeries(v, &iterLen))
 	}
-	//Delay offsets starttime
+
 	fOut := make([]float64, 0, s.len)
 	temp := iterLen
+	//We calculate the Values in this For loop
 	for i := 0; i < temp; i++ {
 		iterLen--
 		fOut = append(fOut, s.op(0, f...))
 	}
-	s.fOut = &fOut
+	s.fOut = fOut
 	return &s
 }
 
@@ -50,41 +62,41 @@ func getStarttime(src ...Series) (int64, int) {
 			n = i
 		}
 	}
-	return s, len(*src[n].Data())
+	return s, len(src[n].Data())
 }
 
-func (s *FUNCTION) Starttime() int64 {
-	return s.starttime
-}
-
-func (s *FUNCTION) Resolution() int {
+func (s *function) Resolution() int {
 	return s.src[0].Resolution()
 }
 
-func (s *FUNCTION) Value(index int) float64 {
+func (s *function) Value(index int) float64 {
 	return s.op(index, s.src...)
 }
 
-func (s *FUNCTION) ValueB(index int) bool {
+func (s *function) Starttime() int64 {
+	return s.starttime
+}
+
+func (s *function) ValueB(index int) bool {
 	return s.op(index, s.src...) > 0
 }
 
-func (s *FUNCTION) DataB() *[]bool {
+func (s *function) DataB() []bool {
 	if s.fBool == nil {
-		f := make([]bool, 0, len(*s.fOut))
-		for _, v := range *s.fOut {
+		f := make([]bool, 0, len(s.fOut))
+		for _, v := range s.fOut {
 			f = append(f, v > 0.0)
 		}
-		s.fBool = &f
+		s.fBool = f
 	}
 	return s.fBool
 }
 
-func (s *FUNCTION) UpdateGroup() *exchange.UpdateGroup {
+func (s *function) UpdateGroup() *exchange.UpdateGroup {
 	return s.ug
 }
 
-func (s *FUNCTION) Data() *[]float64 {
+func (s *function) Data() []float64 {
 	return s.fOut
 }
 
@@ -94,8 +106,6 @@ type fSeries struct {
 	len *int
 }
 
-//TODO Using delay as int pointer makes it little bit faster so we dont always have to increment all delays
-
 func fakeSeries(src Series, len *int) *fSeries {
 	var s fSeries = fSeries{src, len}
 	return &s
@@ -103,21 +113,16 @@ func fakeSeries(src Series, len *int) *fSeries {
 
 func (s *fSeries) Value(index int) float64 {
 	return s.src.Value(index + *s.len)
-	//return float64(index + s.delay)
 }
 
-func (s *fSeries) Data() *[]float64 {
-	return nil
-}
+//Empty functions but needed for the Interface
+func (s *fSeries) Data() []float64 { return nil }
 
-func (s *fSeries) Resolution() int {
-	return 0
-}
+func (s *fSeries) Resolution() int { return 0 }
 
-func (s *fSeries) Starttime() int64 {
-	return 0
-}
+func (s *fSeries) Starttime() int64 { return 0 }
 
-func (s *fSeries) UpdateGroup() *exchange.UpdateGroup {
-	return nil
-}
+func (s *fSeries) UpdateGroup() *exchange.UpdateGroup { return nil }
+
+//EXAMPLE
+//Lol TODO :P

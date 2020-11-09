@@ -1,12 +1,12 @@
 package series
 
-/*All Comparision Operations are form the type of the COMP struct
-This class gets feeded with a function which compares 2 float64 values
+/*All Comparision Operations are form the type of the comp struct
+This class gets feeded with a function which Compares 2 float64 values
 I just implemented ==, >=, >, <, <=, != but it easily can be extended by
 crazier kind of stuff
 */
 
-type COMP struct {
+type comp struct {
 	src  Series
 	src2 Series
 	op   func(v1 float64, v2 float64) bool
@@ -14,12 +14,27 @@ type COMP struct {
 	starttime  int64
 	isConstant bool
 	c          float64
+
+	USR
 }
 
-func comp(operator func(float64, float64) bool, src Series, v Value) *COMP {
-	var s COMP
+/*Comp lets you create your own logical operations. Here an example:
+
+func Less(src Series, v Value) *comp {
+	o := func(v1 float64, v2 float64) bool {
+		return v1 < v2
+	}
+	return Comp(o, src, v)
+}
+@parameter gets a func(float64,float64)bool a function that takes 2 floats and returns a bool
+@parameter src only accepts structs that implement the series interface
+@parameter v Value accepts types of series, integer or float64
+*/
+func Comp(operator func(float64, float64) bool, src Series, v Value) Condition {
+	var s comp
 	s.src = src
 	s.op = operator
+	s.ug = src.UpdateGroup()
 
 	switch v := v.(type) {
 	case float64:
@@ -38,15 +53,11 @@ func comp(operator func(float64, float64) bool, src Series, v Value) *COMP {
 	return &s
 }
 
-func (s *COMP) Starttime() int64 {
-	return s.starttime
-}
-
-func (s *COMP) Resolution() int {
+func (s *comp) Resolution() int {
 	return s.src.Resolution()
 }
 
-func (s *COMP) ValueB(index int) bool {
+func (s *comp) ValueB(index int) bool {
 	if s.isConstant {
 		return s.op(s.src.Value(index), s.c)
 	} else {
@@ -54,75 +65,82 @@ func (s *COMP) ValueB(index int) bool {
 	}
 }
 
-func (s *COMP) DataB() *[]bool {
+func (s *comp) DataB() []bool {
 	if s.isConstant {
 		f := s.src.Data()
-		fOut := make([]bool, 0, len(*f))
-		for _, v := range *f {
+		fOut := make([]bool, 0, len(f))
+		for _, v := range f {
 			fOut = append(fOut, s.op(v, s.c))
 		}
-		return &fOut
+		return fOut
 	} else {
-		f1 := *s.src.Data()
-		f2 := *s.src2.Data()
+		f1 := s.src.Data()
+		f2 := s.src2.Data()
 		l1, l2 := len(f1), len(f2)
 		if l1 >= l2 {
 			fOut := make([]bool, l2, l2)
 			f1 = f1[l1-l2:]
 			for i, v := range f2 {
-				fOut[i] = s.op(v, f1[i])
+				fOut[i] = s.op(f1[i], v)
 			}
-			return &fOut
+			return fOut
 		} else {
 			fOut := make([]bool, l1, l1)
 			f2 = f2[l2-l1:]
 			for i, v := range f1 {
-				fOut[i] = s.op(v, f2[i])
+				fOut[i] = s.op(f2[i], v)
 			}
-			return &fOut
+			return fOut
 		}
 	}
 }
 
 //Comparison functions
 
-func Less(src Series, v Value) *COMP {
+//Smaller (src,v) => src < v
+func Smaller(src Series, v Value) Condition {
 	o := func(v1 float64, v2 float64) bool {
 		return v1 < v2
 	}
-	return comp(o, src, v)
+	return Comp(o, src, v)
 }
 
-func Greater(src Series, v Value) *COMP {
+//Greater (src,v) => src > v
+func Greater(src Series, v Value) Condition {
 	o := func(v1 float64, v2 float64) bool {
 		return v1 > v2
 	}
-	return comp(o, src, v)
+	return Comp(o, src, v)
 }
-func Equal(src Series, v Value) *COMP {
+
+//Equal (src,v) => src == v
+func Equal(src Series, v Value) Condition {
 	o := func(v1 float64, v2 float64) bool {
 		return v1 == v2
 	}
-	return comp(o, src, v)
+	return Comp(o, src, v)
 }
 
-func NotEqual(src Series, v Value) *COMP {
+//NotEqual (src,v) => src != v
+func NotEqual(src Series, v Value) Condition {
 	o := func(v1 float64, v2 float64) bool {
 		return v1 != v2
 	}
-	return comp(o, src, v)
+	return Comp(o, src, v)
 }
 
-func LessEqual(src Series, v Value) *COMP {
+//LessEqual (src,v) => src <= v
+func LessEqual(src Series, v Value) Condition {
 	o := func(v1 float64, v2 float64) bool {
 		return v1 <= v2
 	}
-	return comp(o, src, v)
+	return Comp(o, src, v)
 }
 
-func GreaterEqual(src Series, v Value) *COMP {
+//GreaterEqual (src,v) => src >= v
+func GreaterEqual(src Series, v Value) Condition {
 	o := func(v1 float64, v2 float64) bool {
 		return v1 >= v2
 	}
-	return comp(o, src, v)
+	return Comp(o, src, v)
 }

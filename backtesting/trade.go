@@ -3,17 +3,37 @@ package backtesting
 import (
 	"math"
 
-	"github.com/dawnkosmos/fastpine/exchange"
+	"github.com/dawnkosmos/fastpine/series/strategy"
 )
 
+type Trades []*Trade
+
 type Trade struct {
-	Side        bool // true = Long, false = Short; gets translated when outputing
-	EntryTime   int64
-	ExitTime    int64
-	EntryPrice  float64
-	ExitPrice   float64
-	EntryCandle exchange.Candle
-	ExitCandle  exchange.Candle
+	/*Side       series.Side
+	EntryPrice float64
+	ExitPrice  float64
+
+	EntryTime      int
+	ExitTime       int*/
+	strategy.Trade
+	EntryCondition *Candle
+	ExitCondition  *Candle
+}
+
+func seriesTradeToTrade(o Chart, tr []strategy.Trade) []*Trade {
+	ch := o.src
+	t1 := int64(ch[0].Timestamp)
+	res := int64(o.Resolution)
+	trades := make([]*Trade, 0, len(tr))
+	for _, v := range tr {
+		t := Trade{Trade: v}
+		if t.ExitTime.Unix() < int64(t1) {
+			continue
+		}
+		t.EntryCondition = ch[(t.EntryTime.Unix()-t1)%res-1]
+		t.ExitCondition = ch[(t.ExitTime.Unix()-t1)%res-1]
+	}
+	return trades
 }
 
 func (t *Trade) GetGains() float64 {
@@ -24,26 +44,4 @@ func (t *Trade) GetGains() float64 {
 		x = -1 * (t.ExitPrice - t.EntryPrice) / t.EntryPrice
 	}
 	return math.Round(x*1000) / 10
-}
-
-func getTradesFromBuySell(v []exchange.Candle, buy, sell []bool) []Trade {
-	v = v[len(v)-len(buy):]
-	for i := 0; i < len(buy); i++ {
-		if buy[i] {
-
-		}
-	}
-}
-
-func longT(v []exchange.Candle, sell []bool) Trade {
-	var t Trade
-	t.Side = true
-	t.EntryPrice = v[0].Open
-	for i := 0; i < len(sell); i++ {
-		if sell {
-			t.ExitCandle = v[i]
-			t.ExitPrice = v[i].Close
-			t.ExitTime = v[i].StartTime.Unix() + v[i]
-		}
-	}
 }

@@ -5,88 +5,79 @@ import (
 	"github.com/dawnkosmos/fastpine/exchange"
 )
 
-type LOWEST struct {
+type lowest struct {
 	src Series
 	len int
-	ug  *exchange.UpdateGroup
+	USR
 
 	data *cist.Cist
 	//TEMP VALUES
-	tempResult      float64
-	lowPosition     int
-	pastlowPosition int
-	pastLow         float64
+	tempResult float64
 }
 
-func Lowest(src Series, l int) *LOWEST {
-	var s LOWEST
+//Lowest is equivalent to lowest(src, len)
+func Lowest(src Series, l int) Series {
+	var s lowest
 	s.len = l
 	s.src = src
-	f := src.Data()
-	l1 := len(*f)
+	s.resolution = src.Resolution()
+	s.starttime = src.Starttime() + int64(s.resolution*l)
+	if src.UpdateGroup() != nil {
+		s.ug = src.UpdateGroup()
+		(*s.ug).Add(&s)
+	}
 	s.data = cist.New()
-	var r []float64 = make([]float64, 0, l1)
-	var low float64 = (*f)[0]
-	var lowPosition int = 0
-	r = append(r, low)
-	for i := 1; i < l; i++ {
-		if (*f)[i] <= low {
-			lowPosition = i
-			low = (*f)[i]
+	f := src.Data()
+	var fOut []float64 = make([]float64, 0, len(f))
+	s.data.FillElements(f[:l])
+	lo := s.data.Lowest(0)
+	lowe := lo.Get(0)
+	fOut = append(fOut, lowe)
+
+	var e *cist.Element
+	for _, v := range f[l:] {
+		e = s.data.NILO(v)
+
+		if v <= lowe {
+			lowe = v
+			lo = s.data.GetEle(0)
 		}
-		r = append(r, low)
+		if e == lo {
+			lo = s.data.Lowest(0)
+			lowe = lo.Get(0)
+		}
+		fOut = append(fOut, lowe)
 	}
 
-	for i := l; i < l1; i++ {
-		if lowPosition < i-l {
-			lowPosition = getLowest((*f)[lowPosition+1:i]) + lowPosition
-			low = (*f)[lowPosition]
-		}
-		if (*f)[i] <= low {
-			lowPosition = i
-			low = (*f)[i]
-		}
-		r = append(r, low)
-	}
-
-	s.data.InitData(&r)
-	s.data.FillElements(l)
+	s.data.InitData(fOut)
 
 	return &s
 }
 
-func (s *LOWEST) Update() {
-	v := s.src.Value(0)
-	if v == s.tempResult {
-		return
-	}
-	s.tempResult = v
-	if s.pastLow > v {
-		s.data.Update(v)
-	}
-
-}
-
-func getLowest(f []float64) int {
-	low := f[0]
-	lowPosition := 0
-	for i := 1; i < len(f); i++ {
-		if f[i] <= low {
-			lowPosition = i
-			low = f[i]
-		}
-	}
-	return lowPosition
-}
-
-func (s *LOWEST) Resolution() int {
+func (s *lowest) Resolution() int {
 	return s.src.Resolution()
 }
 
-func (s *LOWEST) Starttime() int64 {
+func (s *lowest) Starttime() int64 {
 	return s.src.Starttime()
 }
 
-func (s *LOWEST) UpdateGroup() *exchange.UpdateGroup {
+func (s *lowest) UpdateGroup() *exchange.UpdateGroup {
 	return s.ug
+}
+
+func (s *lowest) Data() []float64 {
+	return s.data.GetData()
+}
+
+func (s *lowest) Value(index int) float64 {
+	return s.data.Get(index)
+}
+
+func (s *lowest) Update() {
+	_ = "kek"
+}
+
+func (s *lowest) Add() {
+	s.data.Add()
 }
