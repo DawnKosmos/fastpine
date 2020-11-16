@@ -3,7 +3,9 @@ package strategy
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
+	"time"
 )
 
 /*
@@ -14,11 +16,12 @@ interface parameters:
 "trades" - true | false  Print all the trades |||
 "side" - true | false  Seperates result by Long/Short
 */
-func (s *Strategy) Results(parameters ...interface{}) error {
+func (s *Strategy) Results(parameters ...interface{}) (error, []Instance) {
 	p := parameters
 	if len(p)%2 != 0 {
-		return errors.New("parameters input wrong, something is missing")
+		return errors.New("parameters input wrong, something is missing"), nil
 	}
+	var description string
 
 	//default Parameters
 	qt := PERCENT
@@ -30,7 +33,7 @@ func (s *Strategy) Results(parameters ...interface{}) error {
 	for i := 0; i < len(p); i = i + 2 {
 		str, ok := p[i].(string)
 		if !ok {
-			return errors.New("Parameter Position:" + strconv.Itoa(i) + "is no string")
+			return errors.New("Parameter Position:" + strconv.Itoa(i) + "is no string"), nil
 		}
 		switch str {
 		case "split":
@@ -42,23 +45,77 @@ func (s *Strategy) Results(parameters ...interface{}) error {
 		case "side":
 			trades = parameterSide(trades, p[i+1])
 			sideSplit = true
+		case "description":
+			description = parameterDescription(p[i+1])
 		}
 	}
 
-	result(trades, qt, sideSplit, printTrades, s.Balance, s.Fee, s.Slippage)
-	return nil
+	return nil, result(trades, qt, sideSplit, printTrades, s.Balance, s.Fee, s.Slippage, description)
 }
 
-func result(t []Trades, qt qtyType, sideSplit bool, printTrades bool, balance, fee, slippage float64) {
+func result(t []Trades, qt qtyType, sideSplit bool, printTrades bool, balance, fee, slippage float64, description string) []Instance {
+	var ii []Instance
+
 	for _, v := range t {
-		instance(v, qt, sideSplit, printTrades, balance, fee, slippage)
+		ii = append(ii, instance(v, qt, sideSplit, printTrades, balance, fee, slippage, description))
 	}
+	return ii
 }
 
-func instance(t Trades, qt qtyType, ss bool, pt bool, balance, fee, slippage float64) {
-	startingMonth, endingMonth := t[0].EntryTime.Month(), t[len(t)-1].EntryTime.Month()
+type Instance struct {
+	description string
+	startMonth  time.Time
+	endMonth    time.Time
+	side        string
+
+	fee      float64
+	slippage float64
+
+	trades  Trades
+	winrate float64
+	pnl     float64
+	avgWin  float64
+
+	pt bool
+}
+
+func (s Instance) Description() string {
+	return s.description
+}
+
+func (s Instance) Print() {
+
+	str := fmt.Sprintf("Side: %s, Trades: %d, Pnl: %.1f, Winrate: %.2f, AvgGain %f.3f, Start: %v %v End: %v %v", s.side, len(s.trades), s.pnl, s.winrate, s.avgWin, s.startMonth.Month(), s.startMonth.Year(), s.endMonth.Month(), s.endMonth.Year())
+	fmt.Println(str)
+
+	if s.pt {
+		fmt.Println("-----------------------------------------------------")
+		for _, v := range s.trades {
+			fmt.Println(v, v.GetGains(s.fee, s.slippage)*100, "%")
+		}
+		fmt.Println("-----------------------------------------------------")
+	}
+
+}
+
+func instance(t Trades, qt qtyType, ss bool, pt bool, balance, fee, slippage float64, description string) Instance {
+	if len(t) == 0 {
+		return Instance{
+			description: "",
+			endMonth:    time.Now(),
+			startMonth:  time.Now(),
+			winrate:     0.0,
+			pnl:         0.0,
+			slippage:    0.0,
+			fee:         0.0,
+			trades:      t,
+			pt:          pt,
+			side:        "0",
+		}
+	}
+
+	startingMonth, endingMonth := t[0].EntryTime, t[len(t)-1].EntryTime
 	side := "Long & Short"
-	amount := len(t)
 
 	if ss {
 		if t[0].Side {
@@ -81,14 +138,26 @@ func instance(t Trades, qt qtyType, ss bool, pt bool, balance, fee, slippage flo
 		}
 	}
 
-	str := fmt.Sprintf("Side: %s, Trades: %d, Pnl: %.1f, Winrate: %.2f, Start: %v, End: %v", side, amount, pnl, winrate, startingMonth, endingMonth)
-	fmt.Println(str)
+	avgWin := math.Pow(pnl, 1.0/float64(len(t)))
 
-	if pt {
-		fmt.Println("-----------------------------------------------------")
-		for _, v := range t {
-			fmt.Println(v, v.GetGains(fee, slippage)*100, "%")
-		}
-		fmt.Println("-----------------------------------------------------")
+	inst := Instance{
+		description: description,
+		endMonth:    endingMonth,
+		startMonth:  startingMonth,
+		winrate:     winrate,
+		pnl:         pnl,
+		slippage:    slippage,
+		fee:         fee,
+		trades:      t,
+		pt:          pt,
+		side:        side,
+		avgWin:      avgWin,
 	}
+	return inst
 }
+
+type Instances []Instance
+
+func (a Instances) Len() int           { return len(a) }
+func (a Instances) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a Instances) Less(i, j int) bool { return a[i].pnl < a[j].pnl }

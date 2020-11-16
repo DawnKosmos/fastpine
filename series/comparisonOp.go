@@ -130,7 +130,7 @@ func NotEqual(src Series, v Value) Condition {
 }
 
 //LessEqual (src,v) => src <= v
-func LessEqual(src Series, v Value) Condition {
+func SmallerEqual(src Series, v Value) Condition {
 	o := func(v1 float64, v2 float64) bool {
 		return v1 <= v2
 	}

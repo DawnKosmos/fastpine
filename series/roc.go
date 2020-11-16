@@ -32,7 +32,7 @@ func Roc(src Series, l int) Series {
 	var r []float64 = make([]float64, 0, l1)
 
 	for i := l; i < len(f); i++ {
-		r = append(r, (f[i]-f[i-l])/f[i-l])
+		r = append(r, 100*(f[i]-f[i-l])/f[i-l])
 	}
 
 	s.data.InitData(r)

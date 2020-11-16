@@ -5,9 +5,9 @@ type operation interface {
 	Description() string
 }
 
-type Operations []Operation
+type Operations []operation
 
-func (op *operations) Get(t []*Trades) ([]Trades, op) {
+func (op *Operations) Get(t []*Trades) ([]Trades, op) {
 	if len(op) > 0 {
 		return nil, nil
 	}

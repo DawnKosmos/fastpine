@@ -150,6 +150,14 @@ func parameterQty(qt interface{}) qtyType {
 	return i
 }
 
+func parameterDescription(i interface{}) string {
+	a, ok := i.(string)
+	if !ok {
+		return ""
+	}
+	return a
+}
+
 func parameterSplit(t []Trades, split interface{}) []Trades {
 	//mc month Counter
 	i, ok := split.(int)

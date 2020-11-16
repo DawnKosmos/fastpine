@@ -136,7 +136,7 @@ func PrintSeries(i ...interface{}) {
 	for i := 0; i < smol; i++ {
 		s = s + strconv.Itoa(i)
 		for _, v := range SeriesData {
-			s = s + " " + strconv.FormatFloat(v[i], 'f', 2, 64)
+			s = s + " " + strconv.FormatFloat(v[i], 'f', 3, 64)
 		}
 
 		for _, v := range ConditionsData {

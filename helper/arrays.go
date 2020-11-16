@@ -1,6 +1,9 @@
 package helper
 
-import "sort"
+import (
+	"math"
+	"sort"
+)
 
 //FLOAT
 
@@ -35,26 +38,26 @@ func FloatPositionOfHighestValue(f []float64) int {
 }
 
 //FloatAverage returns the mean of a float array
-func FloatAverage(f []float64) float64 {
-	return FloatSum(f) / float64(len(f))
+func FloatAverage(arr []float64) float64 {
+	return FloatSum(arr) / float64(len(arr))
 }
 
 //FloatMedian returns the Median of a float array
-func FloatMedian(f ...float64) float64 {
-	sort.Float64s(f)
+func FloatMedian(arr ...float64) float64 {
+	sort.Float64s(arr)
 
-	median := len(f) / 2
+	median := len(arr) / 2
 
 	if median%2 == 1 {
-		return f[median]
+		return arr[median]
 	}
-	return (f[median-1] + f[median]) / 2
+	return (arr[median-1] + arr[median]) / 2
 }
 
 //FloatArrLowestLen return the lenght of the smallest inputed float array
-func FloatArrLowestLen(f ...[]float64) int {
-	l := len(f[0])
-	for _, v := range f[1:] {
+func FloatArrLowestLen(arr ...[]float64) int {
+	l := len(arr[0])
+	for _, v := range arr[1:] {
 		if len(v) < l {
 			l = len(v)
 		}
@@ -64,9 +67,9 @@ func FloatArrLowestLen(f ...[]float64) int {
 }
 
 //FloatMax returns the highest Value
-func FloatMax(f ...float64) float64 {
-	max := f[0]
-	for _, v := range f[1:] {
+func FloatMax(arr ...float64) float64 {
+	max := arr[0]
+	for _, v := range arr[1:] {
 		if v > max {
 			max = v
 		}
@@ -76,12 +79,33 @@ func FloatMax(f ...float64) float64 {
 }
 
 //FloatSum returns the sum of a float array
-func FloatSum(f []float64) float64 {
+func FloatSum(arr []float64) float64 {
 	var avg float64 = 0
-	for _, v := range f {
+	for _, v := range arr {
 		avg += v
 	}
 	return avg
+}
+
+//FloatStdev calculates the standard derivation of an array
+func FloatStdev(arr []float64) float64 {
+	N := float64(len(arr) - 1)
+	mean := FloatAverage(arr)
+	fn := func(v float64) float64 {
+		return math.Pow(v-mean, 2.0)
+	}
+	sArr := FloatOperator(arr, fn)
+
+	return math.Sqrt(FloatSum(sArr) / N)
+}
+
+//FloatOperator uses a function on each individual value of the float array
+func FloatOperator(arr []float64, fn func(float64) float64) []float64 {
+	out := make([]float64, 0, len(arr))
+	for _, v := range arr {
+		out = append(out, fn(v))
+	}
+	return out
 }
 
 //INTEGER
