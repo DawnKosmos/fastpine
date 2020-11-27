@@ -185,7 +185,7 @@ func mainDiamondIterations(chart *OHCLV) {
 					buy, sell := diamondTemplate(s, nil, e, k+2, true)
 					strat := strategy.NewSimple(chart, buy, sell)
 					de := fmt.Sprintf("%d | %s | %s | %d", i, srcAlgo, maAlgo, k-1)
-					_, ii := strat.Results("side", true, "description", de)
+					_, ii := strat.Results("side", false, "description", de)
 					inst = append(inst, ii...)
 					backtest++
 					trades += strat.GetTrades().Len()
