@@ -33,6 +33,7 @@ Sk-1 = Sk - (xk – Mk-1) * (xk – Mk).
 
 */
 
+//Stdev is equivalent to stdev(src, len)
 func Stdev(src Series, l int) Series {
 	var s stdev
 	s.src = src

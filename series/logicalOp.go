@@ -12,8 +12,7 @@ type and struct {
 }
 
 /*And(con1,con2)
-The equivalent of "con1 and con2"
-*/
+The equivalent of "con1 and con2" */
 func And(con1 Condition, con2 Condition) Condition {
 	var s and
 	s.con1 = con1
@@ -90,7 +89,7 @@ type xor struct {
 	fOut []bool
 }
 
-/*Or(con1,con2)
+/*Xor(con1,con2)
 There is no XOR in pinescript but an equivalent is (con1 or con2) and not (con1 and con2)
 */
 func Xor(con1 Condition, con2 Condition) Condition {
@@ -128,8 +127,8 @@ type not struct {
 	fOut []bool
 }
 
-/*Not(con1)
-The equivalent of "not con1"
+/*Not(con)
+The equivalent of "not con"
 */
 func Not(con Condition) Condition {
 	var s not

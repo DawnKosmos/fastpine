@@ -1,5 +1,6 @@
 package series
 
+//Vix implement the Volatility Index
 func Vix(close, low Series, l int) Series {
 	return DivF(Sub(Highest(close, l), low), Highest(close, l), 100)
 }

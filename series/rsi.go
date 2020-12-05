@@ -6,9 +6,9 @@ import (
 )
 
 /* rsi CALC
-change = change(close)
-gain = change >= 0 ? change : 0.0
-loss = change < 0 ? (-1) * change : 0.0
+chang = chang(close)
+gain = chang >= 0 ? chang : 0.0
+loss = chang < 0 ? (-1) * chang : 0.0
 avgGain = rma(gain, 14)
 avgLoss = rma(loss, 14)
 rs = avgGain / avgLoss
@@ -33,8 +33,7 @@ type rsi struct {
 	avgGain
 	avgLose
 	*/
-	data *cist.Cist
-	//ug         *exchange.UpdateGroup
+	data  *cist.Cist
 	alpha float64
 
 	tempResult float64
@@ -81,7 +80,7 @@ func (r *rsi) Update() {
 	}
 	r.tempResult = v
 	rma := r.data.First()
-	g, l := isGainLose(Change(rma[0], v))
+	g, l := isGainLose(change(rma[0], v))
 	avgGain := r.alpha*g + (1-r.alpha)*rma[1]
 	avgLoss := r.alpha*l + (1-r.alpha)*rma[2]
 	rsi := 100 - (100 / (1 + avgGain/avgLoss))
@@ -104,15 +103,15 @@ func (r *rsi) Data() []float64 {
 func initGainLoss(f []float64) (gain []float64, loss []float64) {
 	gain = append(gain, 0)
 	loss = append(loss, 0)
-	var change float64
+	var chang float64
 	for i := 1; i < len(f); i++ {
-		change = Change(f[i-1], f[i])
-		if change >= 0 {
-			gain = append(gain, change)
+		chang = change(f[i-1], f[i])
+		if chang >= 0 {
+			gain = append(gain, chang)
 			loss = append(loss, 0)
 		} else {
 			gain = append(gain, 0)
-			loss = append(loss, -1*change)
+			loss = append(loss, -1*chang)
 		}
 	}
 

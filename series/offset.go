@@ -9,9 +9,8 @@ type oFFSET struct {
 }
 
 /*
-Offset shifts a series src offset bars to the right
-Pine script code would be: src[1]
-Equivalent here: Offset(src, 1)
+Offset shifts a series the given number
+Pine script equivalent to Offset(src, 1) is src[1]
 */
 func Offset(src Series, offset int) Series {
 	return &oFFSET{src, offset, src.UpdateGroup()}

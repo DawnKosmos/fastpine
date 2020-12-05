@@ -3,8 +3,8 @@ package series
 func BollingerBands(src Series, len int, mult float64) (LowerBand, Basis, UpperBand Series) {
 	Basis = Sma(src, len)
 	std := Mult(Stdev(src, len), mult)
-	LowerBand = Add(std, Basis)
-	UpperBand = Sub(Basis, std)
+	LowerBand = Sub(Basis, std)
+	UpperBand = Add(Basis, std)
 	return
 }
 

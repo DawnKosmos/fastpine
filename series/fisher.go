@@ -16,8 +16,7 @@ type fisher struct {
 	data *cist.Cist
 }
 
-//TODO
-
+//Fisher implements the "fisher transformation" indicator. The Signal line can be achieved with Offset(fisher,1)
 func Fisher(src Series, l int) Series {
 	var s fisher
 	s.src = src

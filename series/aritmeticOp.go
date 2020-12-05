@@ -305,3 +305,57 @@ func Neg(src Series) Series {
 	}
 	return Arit(o, src, 0)
 }
+
+func Log(src Series) Series {
+	o := func(v1, v2 float64) float64 {
+		return math.Log(v1)
+	}
+	return Arit(o, src, 0)
+}
+
+func Sin(src Series) Series {
+	o := func(v1, v2 float64) float64 {
+		return math.Sin(v1)
+	}
+	return Arit(o, src, 0)
+}
+
+func Cos(src Series) Series {
+	o := func(v1, v2 float64) float64 {
+		return math.Cos(v1)
+	}
+	return Arit(o, src, 0)
+}
+
+func Asin(src Series) Series {
+	o := func(v1, v2 float64) float64 {
+		return math.Asin(v1)
+	}
+	return Arit(o, src, 0)
+}
+
+func Acos(src Series) Series {
+	o := func(v1, v2 float64) float64 {
+		return math.Acos(v1)
+	}
+	return Arit(o, src, 0)
+}
+
+func Floor(src Series) Series {
+	o := func(v1, v2 float64) float64 {
+		return math.Floor(v1)
+	}
+	return Arit(o, src, 0)
+}
+
+func Change(src Series, len int) Series {
+	srcOffset := Offset(src, len)
+	return Arit(change, src, srcOffset)
+}
+
+func Invert(src Series) Series {
+	o := func(v1, v2 float64) float64 {
+		return 1 / v1
+	}
+	return Arit(o, src, 0)
+}

@@ -12,10 +12,6 @@ const (
 	LOW
 	CLOSE
 	VOLUME
-	HL2
-	OC2
-	HCL3
-	OHCL4
 )
 
 type CandlestickProvider interface {
@@ -60,22 +56,6 @@ func Source(In Inputtype, o CandlestickProvider) Series {
 	case VOLUME:
 		s.Get = func(e exchange.Candle) float64 {
 			return e.Volume
-		}
-	case HL2:
-		s.Get = func(e exchange.Candle) float64 {
-			return (e.High + e.Low) / 2
-		}
-	case OC2:
-		s.Get = func(e exchange.Candle) float64 {
-			return (e.Open + e.Close) / 2
-		}
-	case OHCL4:
-		s.Get = func(e exchange.Candle) float64 {
-			return (e.Open + e.Close + e.High + e.Low) / 4
-		}
-	case HCL3:
-		s.Get = func(e exchange.Candle) float64 {
-			return (e.Close + e.High + e.Low) / 3
 		}
 	}
 

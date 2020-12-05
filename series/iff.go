@@ -42,8 +42,7 @@ if con {
 	stat2
 }
 
-Iff implements the Condition and Series interface. It can have some buggs atm
-*/
+Iff implements the Condition and Series interface. It can have some bugs*/
 func Iff(con Condition, stat1 Value, stat2 Value) *IFF {
 	var s IFF
 	s.con = con

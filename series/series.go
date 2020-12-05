@@ -82,7 +82,7 @@ func bigger(i, j int64) int64 {
 }
 
 //Change returns the difference between a new and old value
-func Change(old, new float64) float64 {
+func change(old, new float64) float64 {
 	return new - old
 }
 

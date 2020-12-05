@@ -19,7 +19,6 @@ type comp struct {
 }
 
 /*Comp lets you create your own logical operations. Here an example:
-
 func Less(src Series, v Value) *comp {
 	o := func(v1 float64, v2 float64) bool {
 		return v1 < v2
