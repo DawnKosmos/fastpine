@@ -160,4 +160,4 @@ type Instances []Instance
 
 func (a Instances) Len() int           { return len(a) }
 func (a Instances) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a Instances) Less(i, j int) bool { return a[i].pnl < a[j].pnl }
+func (a Instances) Less(i, j int) bool { return a[i].avgWin < a[j].avgWin }

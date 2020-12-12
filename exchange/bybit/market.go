@@ -50,7 +50,7 @@ func resolutionToString(i int) string {
 	}
 }
 
-func bbCandleToCandle(ch []rest.OHLC) []exchange.Candle {
+func deribitCandleToCandle(ch []rest.OHLC) []exchange.Candle {
 	newChart := make([]exchange.Candle, 0, len(ch))
 	var ec exchange.Candle
 	for _, c := range ch {
@@ -59,7 +59,7 @@ func bbCandleToCandle(ch []rest.OHLC) []exchange.Candle {
 			Open:      c.Open,
 			High:      c.High,
 			Low:       c.Low,
-			StartTime: time.Unix(c.OpenTime, 0),
+			StartTime: time.Unix(c.OpenTime/1000, 0),
 			Volume:    c.Volume,
 		}
 		newChart = append(newChart, ec)

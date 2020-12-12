@@ -1,16 +1,20 @@
 package deribit
 
 import (
-	"net/http"
-
-	"github.com/gorilla/websocket"
+	"github.com/frankrap/deribit-api"
 )
 
 type DERIBIT struct {
-	Client      *http.Client
-	key         string
-	secret      string
-	UsedAccount string
-	Subaccounts []string
-	conn        *websocket.Conn
+	d *deribit.Client
+}
+
+func New(key, secret string) *DERIBIT {
+	cfg := &deribit.Configuration{
+		Addr:      deribit.RealBaseURL,
+		ApiKey:    key,
+		SecretKey: secret,
+	}
+	client := DERIBIT{deribit.New(cfg)}
+
+	return &client
 }

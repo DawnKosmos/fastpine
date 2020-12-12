@@ -6,6 +6,7 @@ require (
 	github.com/buger/jsonparser v1.0.0
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/frankrap/bybit-api v1.0.3
+	github.com/frankrap/deribit-api v1.0.3
 	github.com/go-numb/go-ftx v0.0.0-20200829181514-3144aa68f505
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/gorilla/websocket v1.4.2

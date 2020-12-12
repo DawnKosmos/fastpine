@@ -38,8 +38,11 @@ func diamondTemplate(src, volume Series, ma func(src Series, l int) Series, l2 i
 	} else {
 		diamond = Vwma(d, volume, 2)
 	}
-
-	buy, sell = momentumSwingBuySell(diamond)
+	if invert {
+		sell, buy = momentumSwingBuySell(diamond)
+	} else {
+		buy, sell = momentumSwingBuySell(diamond)
+	}
 
 	return
 }

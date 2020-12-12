@@ -86,7 +86,7 @@ func ConvertCandleResolution(c []Candle) Candle {
 //New res must me greater than old
 func ConvertChartResolution(oldResolution, newResolution int64, ch []Candle) ([]Candle, error) {
 	if newResolution == oldResolution {
-		return ch, fmt.Errorf("nigger")
+		return ch, nil
 	}
 
 	if oldResolution > newResolution || newResolution%oldResolution != 0 {
@@ -94,8 +94,6 @@ func ConvertChartResolution(oldResolution, newResolution int64, ch []Candle) ([]
 	}
 
 	quotient := int(newResolution / oldResolution)
-
-	fmt.Println(quotient, newResolution, oldResolution)
 
 	var newChart []Candle = make([]Candle, 0, len(ch)/quotient)
 
@@ -140,3 +138,21 @@ func median(a, b, c float64) float64 {
 		}
 	}
 }
+
+/*
+func getChart(exchange string, ticker string, resolution int) (chart []Candle, doesExist bool) {
+	fileName := exchange + ticker + strconv.Itoa(resolution) + ".txt"
+
+}
+
+func checkSrcFolder() error {
+	_, err := os.Stat("src")
+	if err != nil {
+		err := os.Mkdir("src", 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+*/
