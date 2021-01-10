@@ -64,7 +64,8 @@ func Iff(con Condition, stat1 Value, stat2 Value) *IFF {
 		s.c1 = float64(stat1)
 		s.isConstant1 = true
 		s.starttime = con.Starttime()
-	case Series:
+	case Series:	
+0,
 		s.src1 = stat1
 		s.starttime = helper.Int64Max(con.Starttime(), stat1.Starttime())
 		f1 = stat1.Data()

@@ -74,11 +74,14 @@ func (u *USR) Resolution() int {
 
 //HELP FUNCS
 
-func bigger(i, j int64) int64 {
-	if i > j {
-		return i
+func bigger(i ...int64) int64 {
+	var a int64
+	for _, j := range i {
+		if j > a {
+			a = j
+		}
 	}
-	return j
+	return a
 }
 
 //Change returns the difference between a new and old value

@@ -1,15 +1,12 @@
 package exchange
 
-import (
-	"os"
-)
-
 /*Checking files working like this
-Bybit sends a request if a file is already existing. If the anwser is true. An ohclv chart gets parsed
+Exchange sends a request if a file is already existing. If the anwser is true. An ohclv chart gets parsed
 and sent back
 if the anwser is false, the exchanges sends back a ohclv which than gets written in a newly created file
 */
-func FileExistCheck(str string) bool {
+/*
+func fileExistCheck(str string) bool {
 	src := "src/" + str
 	_, err := os.Open(src) // For read access.
 	if err != nil {
@@ -17,3 +14,24 @@ func FileExistCheck(str string) bool {
 	}
 	return true
 }
+
+func checkFolder() bool {
+	return false
+}
+
+func createFolder() {
+}
+
+func CheckExisting(exchange string, ticker string, resolution int, startTime, endTime time.Time) ([]Candle, error) {
+	checkFolder()
+	fileName := exchange + ticker + strconv.Itoa(resolution)
+
+	if !fileExistCheck(fileName) {
+		return []Candle{}, errors.New("File not existing")
+	}
+
+	file,
+
+
+}
+*/

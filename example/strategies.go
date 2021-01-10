@@ -129,11 +129,9 @@ func mainDiamondIterations(chart *OHCLV) {
 
 	loCo := longCon(0.0, 6, close, low)
 	shCo := shortCon(0.0, 6, close, high)
-
-	ha := HeikinAshi(chart)
 	var inputName string
 
-	input := []Series{open, close, HCL3(chart), OC2(ha), HL2(chart), OC2(chart)}
+	input := []Series{open, close, HCL3(chart), HL2(chart), OC2(chart)}
 	for iii, ii := range input {
 		switch iii {
 		case 0:
@@ -143,16 +141,14 @@ func mainDiamondIterations(chart *OHCLV) {
 		case 2:
 			inputName = "HCL3"
 		case 3:
-			inputName = "HA OC2"
-		case 4:
 			inputName = "HL2"
-		case 5:
+		case 4:
 			inputName = "OC2"
 		}
 		src := ii
 
 		for i := 0; i < 7; i++ {
-			Strategies := []Series{Rsi(src, 6+i), Ema(src, 6+i), Roc(src, 4+i), dai(open, high, low, close, volume, 7, 2+i), Swma(src), Sma(src, 4+i)}
+			Strategies := []Series{Rsi(src, 6+i), Ema(src, 6+i), Swma(src), Sma(src, 4+i)}
 			for ss, s := range Strategies {
 				switch ss {
 				case 0:
@@ -160,12 +156,8 @@ func mainDiamondIterations(chart *OHCLV) {
 				case 1:
 					srcAlgo = "EMA"
 				case 2:
-					srcAlgo = "Roc"
-				case 3:
-					srcAlgo = "DAI"
-				case 4:
 					srcAlgo = "Swma"
-				case 5:
+				case 3:
 					srcAlgo = "SMA"
 				}
 				for ee, e := range maFuncs {
@@ -250,8 +242,8 @@ func mainSaphirIteration(chart *OHCLV) {
 
 	fmt.Println("Start Iterating")
 
-	loCo := longCon(0.8, 6, close, low)
-	shCo := shortCon(1.0, 6, close, high)
+	loCo := longCon(0.0, 6, close, low)
+	shCo := shortCon(0.0, 6, close, high)
 
 	for i := 0; i < 8; i++ {
 		Strategies := []Series{Rsi(openclose, 6+i), Ema(openclose, 6+i), Roc(openclose, 4+i), dai(open, high, low, close, volume, 7, 2+i), Swma(openclose)}

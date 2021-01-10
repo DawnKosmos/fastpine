@@ -33,11 +33,9 @@ func main() {
 	//f := ftx.New("", "", "", []string{""})
 
 	//b := bybit.New(false, nil, "", "")
-	d := deribit.New("", "")
+	cb := deribit.New("", "")
 	fmt.Println("U WINNING Son?")
-	chart := NewOHCLV(d, "BTC-PERPETUAL", exchange.DateToTime("01", "05", "2019"), 3600*24, &ug)
+	chart := NewOHCLV(cb, "ETH-PERPETUAL", exchange.DateToTime("01", "11", "2018"), 3600*3, &ug)
 	mainDiamondIterations(chart)
-	//time.Sleep(9 * time.Second)
-	//mainDiamondIterations(chart)
 
 }

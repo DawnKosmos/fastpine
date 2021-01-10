@@ -40,7 +40,6 @@ func Fisher(src Series, l int) Series {
 	value1 = fishCalc1(f[l-1], lowest, highest, value1)
 
 	value2 = fishCalc2(value1)
-	fmt.Println(value1, value2, lowest, highest)
 	fish = fishCalc(value2, fish)
 
 	fOut = append(fOut, fish)
